@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# 参考页面:https://www.cnblogs.com/xingshansi/p/6799994.html
-# 参考页面：https://www.cnblogs.com/fnng/p/3691053.html
+# 应该建立一个log文件，然后，里面有两个队列，
+# 一个是已经完成的音频列表一个是未完成的音频列表。可以中途断开继续。
 
 import time
 import wave
@@ -30,7 +30,7 @@ thread1=0
 thread2=0
 
 
-def _async_raise(tid, exctype):  
+def _async_raise(tid, exctype):
     """raises the exception, performs cleanup if needed"""
     tid = ctypes.c_long(tid)
     if not inspect.isclass(exctype):
@@ -46,8 +46,6 @@ def _async_raise(tid, exctype):
 
 def stop_thread(thread):
     _async_raise(thread.ident, SystemExit)
-
-
 
 def FileExtension(path):
     return os.path.splitext(path)[1]
@@ -69,7 +67,6 @@ def log_file(string):
     f = open(filename,'a+')
     f.write(TimeStamps()+"  "+string+"\n")
     f.close()
-
 
 class MyThread(threading.Thread):
 
@@ -98,20 +95,14 @@ def mkdir(path):
     path=path.rstrip("\\")
 
     # 判断路径是否存在
-    # 存在     True
-    # 不存在   False
     isExists=os.path.exists(path)
 
     # 判断结果
     if not isExists:
-        # 如果不存在则创建目录
-        # 创建目录操作函数
         os.makedirs(path)
-
         log_file(path+' 创建成功')
         return True
     else:
-        # 如果目录存在则不创建，并提示目录已存在
         log_file (path+' 目录已存在')
         return False
 
@@ -138,6 +129,8 @@ def HeadThink():
         log_file("==>start playing")
         thread1 = MyThread(PlayMusic, (music,), PlayMusic.__name__)
         thread2 = MyThread(my_record,(newFileName , framerate, nchannels, sampwidth,), my_record.__name__)
+        thread1.setDaemon(True)
+        thread2.setDaemon(True)
         thread2.start()
         log_file("record is recording")
         time.sleep(3)# 防止出现播放错误
@@ -218,7 +211,6 @@ def PlayMusic(filename):
     log_file(cmd)
     os.system(cmd)
 
-
 def PlayMP3(filename):
     cmd = 'play ' + filename
     os.system(cmd)
@@ -229,15 +221,19 @@ def GetChThread():
     global thread2
     global program_flag_disable
     while True:
-        print("==>")
         if _GetchUnix().__call__() == 'q':
             print("key q is pressed!")
-            if thread1.isAlive():
-                os.system("killall play")
-                stop_thread(thread1)
-            if thread2.isAlive():
-                stop_thread(thread2)
+            #os.kill()
+            #sys.exit()
+            #os._exit()
+            #exit()
             program_flag_disable = 1
+            #if thread1.isAlive():
+            #    os.system("killall play")
+            #    stop_thread(thread1)
+            #if thread2.isAlive():
+            #    stop_thread(thread2)
+            #program_flag_disable = 1
             break
 
 def save_wave_file(filename, data, framerate, channels, sampwidth):
@@ -272,15 +268,12 @@ def my_record(filename, framerate, channels, sampwidth):
     save_wave_file(filename, my_buf, framerate, channels, sampwidth)
     stream.close()
 
-
-
 def Usage():
-    log_file("    Please use `python2.7 play_and_record.py -fs <file_source> -fd <file_distination> -fr <framerate>")
-    log_file("          -ch <channels> -sw <sampwidth> -h <for_help>'")
-    log_file("    If you want to kill the program,press key ‘q’.")
-    log_file("    Example:")
-    log_file("        python2.7 play_and_record.py -fs ./ -fd ./hellofile -fr 16000 -ch 4 -sw 2")
-    log_file("    Thinks for using ;)")
+    print("    Please use `python2.7 play_and_record.py -fs <file_source> -fd <file_distination> -fr <framerate>")
+    print("          -ch <channels> -sw <sampwidth> -h <for_help>'")
+    print("    If you want to kill the program,press key ‘q’.")
+    print("    Example:")
+    print("        python2.7 play_and_record.py -fs ./ -fd ./hellofile -fr 16000 -ch 4 -sw 2")
 
 class _GetchUnix:
     def __init__(self):
@@ -296,46 +289,6 @@ class _GetchUnix:
         finally:
             termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
         return ch
-
-def InputKey():
-    myStr = raw_input("Enter your input:")
-    return myStr
-
-def Main():
-
-    if len(sys.argv) < 2:
-        Usage()
-        return False
-    if len(sys.argv) == 2:
-        if sys.argv[1] != "":
-            gain = sys.argv[1]
-        else:
-            gain = "1"
-    else:
-        gain = "1"
-
-    CheckFile(listfile,gain)
-    log_file("Press 'm' to exit")
-    while True:
-        vad_key = _GetchUnix().__call__()
-        if vad_key == 'w':
-            kws_key = _GetchUnix().__call__()
-            if kws_key == 'a':
-                log_file("Hei,Start Record !")
-                my_uuid = str(uuid.uuid1()).replace('-', '')
-                wavfile = my_uuid
-                wavfile += ".wav"
-                my_record(wavfile)
-                log_file ("Change Volume !")
-                ChangeVolume(wavfile, "NEW_" + wavfile, gain)
-                log_file ("Now Send To Cloud !")
-                return True
-            elif kws_key == 'q':
-                pass
-        elif vad_key == 'm':
-            log_file ("See You !")
-            return False
-
 
 if __name__ == "__main__":
     #log_file_file_name()
