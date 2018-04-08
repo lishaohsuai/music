@@ -1,9 +1,6 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2.7
 # -*- coding: utf-8 -*-
-# 应该建立一个log文件，然后，里面有两个队列，
-# 一个是已经完成的音频列表一个是未完成的音频列表。可以中途断开继续。
 
-# 打印混乱
 import time
 import wave
 from pyaudio import PyAudio,paInt16
@@ -273,7 +270,7 @@ def PlayMP3(filename):
     os.system(cmd)
 
 def GetChThread():
-    ''' 这个会导致终端乱码'''
+    ''' 这个会导致终端乱码 暂时不用'''
     global program_flag_disable
     while True:
         if _GetchUnix().__call__() == 'q':
@@ -319,9 +316,9 @@ def my_record(filename, framerate, channels, sampwidth):
     stream.close()
 
 def Usage():
-    print("    Please use `python2.7 play_and_record.py -fs <file_source> -fd <file_distination> -fr <framerate>")
-    print("          -ch <channels> -sw <sampwidth> -h <for_help>'")
-    print("    If you want to kill the program,press key ‘q’.")
+    print("    Please use `python2.7 play_and_record.py -s <file_source> -d <file_distination> -r <framerate>")
+    print("          -c <channels> -w <sampwidth> -h <for_help>'")
+    print("    If you want to kill the program,press key ‘q’. CTRL + C")
     print("    Example:")
     print("        python2.7 play_and_record.py -s ./ -d ./hellofile -f 16000 -c 4 -w 2")
 
