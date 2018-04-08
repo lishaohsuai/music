@@ -3,6 +3,7 @@
 # 应该建立一个log文件，然后，里面有两个队列，
 # 一个是已经完成的音频列表一个是未完成的音频列表。可以中途断开继续。
 
+# 打印混乱
 import time
 import wave
 from pyaudio import PyAudio,paInt16
@@ -16,36 +17,37 @@ import getopt
 import sys
 import inspect
 import ctypes
-
+import logging
 
 # global vars
 
-music_files=[]
-fileSource="./"
-fileDest="./Output/"
+music_files = []
+fileSource = "./"
+fileDest = "./Output/"
 record_stop_enable = 0
 NUM_SAMPLES = 2000
 program_flag_disable = 0
-thread1=0
-thread2=0
+thread1 = 0
+thread2 = 0
+logger = None
 
+def MyLogging(filepath):
+    global logger
+    logger = logging.getLogger(__name__)
+    logger.setLevel(level = logging.INFO)
+    if filepath[-1] != '/':
+        filepath += '/'
+    handler = logging.FileHandler(filepath+"log.txt")
+    handler.setLevel(logging.INFO)
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    handler.setFormatter(formatter)
+    # let the log print ahead of you
+    console = logging.StreamHandler()
+    console.setLevel(logging.INFO)
 
-def _async_raise(tid, exctype):
-    """raises the exception, performs cleanup if needed"""
-    tid = ctypes.c_long(tid)
-    if not inspect.isclass(exctype):
-        exctype = type(exctype)
-    res = ctypes.pythonapi.PyThreadState_SetAsyncExc(tid, ctypes.py_object(exctype))
-    if res == 0:
-        raise ValueError("invalid thread id")
-    elif res != 1:
-        # """if it returns a number greater than one, you're in trouble,
-        # and you should call it again with exc=NULL to revert the effect"""
-        ctypes.pythonapi.PyThreadState_SetAsyncExc(tid, None)
-        raise SystemError("PyThreadState_SetAsyncExc failed")
-
-def stop_thread(thread):
-    _async_raise(thread.ident, SystemExit)
+    logger.addHandler(handler)
+    logger.addHandler(console)
+    logger.info("Start to log")
 
 def FileExtension(path):
     return os.path.splitext(path)[1]
@@ -54,18 +56,42 @@ def FileList(filepath):
     '''
     打印目录下的所有的文件名称．
     '''
+    global logger
     for fpathe,dirs,fs in os.walk(filepath):
         for f in fs:
             if FileExtension(f) == ".wav" or FileExtension(f) == ".mp3":
                 music_files.append(os.path.join(fpathe, f))
-                #print os.path.join(fpathe, f)
+    logger.error(str(music_files))
+    return music_files
 
-def log_file(string):
+def FifoRead():
+    global fileDest
+    global music_files
+    if fileDest[-1] =='/':
+        filename = fileDest + "fifo.txt"
+    else:
+        filename = fileDest + '/' + "fifo.txt"
+
+    f = open(filename,'r')
+    string = f.readline()
+    string = string.split()# str >>> list
+    f.close()
+    print string
+    return string
+    if (RW == "write"):
+        f = open(filename,'w')
+        f.write(" ".join(music_files))# list >>> str
+        f.close()
+
+def FifoWrite(music_list):
     global fileDest
     if fileDest[-1] =='/':
-        filename = fileDest + "log_file.txt"
-    f = open(filename,'a+')
-    f.write(TimeStamps()+"  "+string+"\n")
+        filename = fileDest + "fifo.txt"
+    else:
+        filename = fileDest + '/' + "fifo.txt"
+
+    f = open(filename,'w')
+    f.write(" ".join(music_list))# list >>> str
     f.close()
 
 class MyThread(threading.Thread):
@@ -90,6 +116,7 @@ def GenerateNewFileName(oldFileName):
 
 def mkdir(path):
     # 去除首位空格
+    global logger
     path=path.strip()
     # 去除尾部 \ 符号
     path=path.rstrip("\\")
@@ -100,15 +127,31 @@ def mkdir(path):
     # 判断结果
     if not isExists:
         os.makedirs(path)
-        log_file(path+' 创建成功')
+        print(path+' 创建成功')
         return True
     else:
-        log_file (path+' 目录已存在')
+        print (path+' 目录已存在')
         return False
+
+def JudjeTheLogFileExits():
+    global fileDest
+    if fileDest[-1] =='/':
+        filename = fileDest + "fifo.txt"
+    else:
+        filename = fileDest + '/' + "fifo.txt"
+
+    if os.path.exists(filename):
+        message = 'OK, the "%s" file exists.'
+        return True
+    else:
+        message = "Sorry, I cannot find the %s file."
+        print message % filename
+        return False
+
 
 def HeadThink():
     '''
-    决定播放
+    Decide to speak and listen
     '''
     global record_stop_enable
     global fileSource
@@ -117,38 +160,49 @@ def HeadThink():
     global thread1
     global thread2
     global program_flag_disable
+    global logger
     nchannels , framerate , sampwidth = MakeChoice()
     # 得到音乐列表
-    FileList(fileSource)
     mkdir(fileDest)
-    count = len(music_files)
-    thread3 = MyThread(GetChThread, None , GetChThread.__name__)
-    thread3.start()
+    MyLogging(fileDest)
+    if(JudjeTheLogFileExits()):
+        music_files_local = FifoRead() # 读取曾经的文件
+    else:
+        music_files_local = FileList(fileSource) # 重新生成音频文件列表
+        FifoWrite(music_files_local)
+    music_files = music_files_local
+    #thread3 = MyThread(GetChThread, None , GetChThread.__name__)
+    #thread3.start()
     for music in music_files:
         newFileName = GenerateNewFileName(music)
-        log_file("==>start playing")
+        logger.info("start playing")
         thread1 = MyThread(PlayMusic, (music,), PlayMusic.__name__)
         thread2 = MyThread(my_record,(newFileName , framerate, nchannels, sampwidth,), my_record.__name__)
         thread1.setDaemon(True)
         thread2.setDaemon(True)
         thread2.start()
-        log_file("record is recording")
-        time.sleep(3)# 防止出现播放错误
+        logger.info("record is recording")
+        time.sleep(2)# 防止出现播放错误
         thread1.start()
-        log_file("play is playing")
+        logger.info("play is playing")
         thread1.join()
-        log_file("play is end")
+        logger.info("play is end")
         record_stop_enable = 1
         thread2.join()
+        logger.info("record is end")
+        logger.info("sync the log file")
+        if len(FifoRead()) >= 1:
+            FifoWrite(FifoRead()[1:])
+        else:
+            FifoWrite(FifoRead()[:])
         if program_flag_disable:
-            log_file("==> 提前结束程序")
+            logger.info("kill the program in advance.")
             break
-        log_file("==>record is end")
-    log_file("结束程序")
+    logger.info("program is stop")
 
 def TimeStamps():
     t = time.time()
-    return datetime.datetime.now().strftime('%m-%d_%H:%M')
+    return datetime.datetime.now().strftime('%m-%d_%H:%M:%S')
 
 def MakeChoice():
     # 默认的参数
@@ -183,7 +237,6 @@ def PlayWav(filename):
     waveFile = wave.open(filename, 'rb')
     params = waveFile.getparams()
     nchannels, sampwidth, framerate, nframes = params[:4]
-    #log_file ("framerate %d nchannels %d sampwidth %d nframes %d"%(framerate,nchannels,sampwidth,nframes))
     voiceCard = pyaudio.PyAudio()
     chunk = 1024
     #打开声音输出流
@@ -207,37 +260,30 @@ def PlayWav(filename):
         stream.write(data)
 
 def PlayMusic(filename):
+    global logger
     cmd = 'play ' + filename
-    log_file(cmd)
+    logger.info(cmd)
     os.system(cmd)
 
 def PlayMP3(filename):
+    global logger
     cmd = 'play ' + filename
+    logger.info(cmd)
     os.system(cmd)
 
 def GetChThread():
-    global record_stop_enable
-    global thread1
-    global thread2
+    ''' 这个会导致终端乱码'''
     global program_flag_disable
     while True:
         if _GetchUnix().__call__() == 'q':
             print("key q is pressed!")
-            #os.kill()
-            #sys.exit()
-            #os._exit()
-            #exit()
             program_flag_disable = 1
-            #if thread1.isAlive():
-            #    os.system("killall play")
-            #    stop_thread(thread1)
-            #if thread2.isAlive():
-            #    stop_thread(thread2)
-            #program_flag_disable = 1
             break
 
 def save_wave_file(filename, data, framerate, channels, sampwidth):
     '''save the date to the wavfile'''
+    global logger
+    global fileDest
     wf=wave.open(filename,'wb')
     wf.setnchannels(channels)
     wf.setsampwidth(sampwidth)
@@ -245,23 +291,26 @@ def save_wave_file(filename, data, framerate, channels, sampwidth):
     wf.writeframes(b"".join(data))
     wf.close()
     (filepath,tempfilename) = os.path.split(filename)
+    if(filepath[0] == '.'):
+        filepath = filepath[1:]
     mkdir(fileDest+filepath)
     cmd = "mv "+filename+" "+fileDest+filepath
-    print cmd
+    logger.info(cmd)
     os.system(cmd)
 
 def my_record(filename, framerate, channels, sampwidth):
     global record_stop_enable
+    global logger
     pa=PyAudio()
     stream=pa.open(format = paInt16,channels=channels,
                    rate=framerate,input=True,
                    frames_per_buffer=NUM_SAMPLES)
     my_buf=[]
-    log_file('Record Media.')
+    logger.info('Record Media.')
     while True:
         string_audio_data = stream.read(NUM_SAMPLES)
         my_buf.append(string_audio_data)
-        #log_file(".")
+        #logger.info(".")
         if record_stop_enable:
             record_stop_enable = 0
             break
@@ -273,7 +322,7 @@ def Usage():
     print("          -ch <channels> -sw <sampwidth> -h <for_help>'")
     print("    If you want to kill the program,press key ‘q’.")
     print("    Example:")
-    print("        python2.7 play_and_record.py -fs ./ -fd ./hellofile -fr 16000 -ch 4 -sw 2")
+    print("        python2.7 play_and_record.py -s ./ -d ./hellofile -f 16000 -c 4 -w 2")
 
 class _GetchUnix:
     def __init__(self):
@@ -291,16 +340,7 @@ class _GetchUnix:
         return ch
 
 if __name__ == "__main__":
-    #log_file_file_name()
-    #PlayMusic(u"./kanong.wav")
     HeadThink()
-    #my_record("helloworld.wav",16000,2,2)
-    #log_file("fdafdsafds")
-    #record_stop_enable = 1
-    #MakeChoice()
-    #PlayMP3("kanong.mp3")
-    #FileList("./")
-    #print("11111")
-    #thread3 = MyThread(GetChThread, None , GetChThread.__name__)
-    #thread3.start()
-    #print("11111")
+    #FileList(fileSource)
+    #Fifo("write")
+    #Fifo("read")

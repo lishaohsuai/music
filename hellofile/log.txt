@@ -1,0 +1,39 @@
+2018-04-08 18:20:07,234 - __main__ - INFO - Start to log
+2018-04-08 18:20:07,235 - __main__ - ERROR - ['./aec_test_jin_ok.wav', './aec_test_3m_fail.wav', './music/aec_test_1m_ok.wav', './music/aec_test_2m_2ok_1fail.wav']
+2018-04-08 18:20:07,235 - __main__ - INFO - start playing
+2018-04-08 18:20:07,272 - __main__ - INFO - record is recording
+2018-04-08 18:20:07,272 - __main__ - INFO - Record Media.
+2018-04-08 18:20:09,274 - __main__ - INFO - play ./aec_test_jin_ok.wav
+2018-04-08 18:20:09,274 - __main__ - INFO - play is playing
+2018-04-08 18:20:14,413 - __main__ - INFO - play is end
+2018-04-08 18:20:14,436 - __main__ - INFO - mv ./aec_test_jin_ok_04-08_18:20:07.wav ./hellofile
+2018-04-08 18:20:14,440 - __main__ - INFO - record is end
+2018-04-08 18:20:14,440 - __main__ - INFO - sync the log file
+2018-04-08 18:20:14,440 - __main__ - INFO - start playing
+2018-04-08 18:20:14,446 - __main__ - INFO - Record Media.
+2018-04-08 18:20:14,446 - __main__ - INFO - record is recording
+2018-04-08 18:20:16,448 - __main__ - INFO - play is playing
+2018-04-08 18:20:16,448 - __main__ - INFO - play ./aec_test_3m_fail.wav
+2018-04-08 18:20:27,865 - __main__ - INFO - play is end
+2018-04-08 18:20:27,987 - __main__ - INFO - mv ./aec_test_3m_fail_04-08_18:20:14.wav ./hellofile
+2018-04-08 18:20:27,990 - __main__ - INFO - record is end
+2018-04-08 18:20:27,990 - __main__ - INFO - sync the log file
+2018-04-08 18:20:27,990 - __main__ - INFO - start playing
+2018-04-08 18:20:27,992 - __main__ - INFO - record is recording
+2018-04-08 18:20:27,992 - __main__ - INFO - Record Media.
+2018-04-08 18:20:29,995 - __main__ - INFO - play ./music/aec_test_1m_ok.wav
+2018-04-08 18:20:29,995 - __main__ - INFO - play is playing
+2018-04-08 18:20:36,662 - __main__ - INFO - play is end
+2018-04-08 18:20:36,773 - __main__ - INFO - mv ./music/aec_test_1m_ok_04-08_18:20:27.wav ./hellofile/music
+2018-04-08 18:20:36,777 - __main__ - INFO - record is end
+2018-04-08 18:20:36,777 - __main__ - INFO - sync the log file
+2018-04-08 18:20:36,777 - __main__ - INFO - start playing
+2018-04-08 18:20:36,781 - __main__ - INFO - Record Media.
+2018-04-08 18:20:36,781 - __main__ - INFO - record is recording
+2018-04-08 18:20:38,783 - __main__ - INFO - play ./music/aec_test_2m_2ok_1fail.wav
+2018-04-08 18:20:38,784 - __main__ - INFO - play is playing
+2018-04-08 18:20:47,122 - __main__ - INFO - play is end
+2018-04-08 18:20:47,209 - __main__ - INFO - mv ./music/aec_test_2m_2ok_1fail_04-08_18:20:36.wav ./hellofile/music
+2018-04-08 18:20:47,212 - __main__ - INFO - record is end
+2018-04-08 18:20:47,212 - __main__ - INFO - sync the log file
+2018-04-08 18:20:47,212 - __main__ - INFO - program is stop
