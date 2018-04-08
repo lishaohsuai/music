@@ -85,6 +85,7 @@ def FifoRead():
 
 def FifoWrite(music_list):
     global fileDest
+    global music_files
     if fileDest[-1] =='/':
         filename = fileDest + "fifo.txt"
     else:
@@ -341,6 +342,3 @@ class _GetchUnix:
 
 if __name__ == "__main__":
     HeadThink()
-    #FileList(fileSource)
-    #Fifo("write")
-    #Fifo("read")
